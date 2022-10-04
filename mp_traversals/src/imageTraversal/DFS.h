@@ -38,5 +38,5 @@ private:
   PNG _png;
   Point _start;
   double _tolerance;
-  std::stack<Poin> _s;
+  std::stack<Point> _q;
 };

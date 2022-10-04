@@ -33,7 +33,27 @@ double ImageTraversal::calculateDelta(const HSLAPixel & p1, const HSLAPixel & p2
  */
 ImageTraversal::Iterator::Iterator() {
   /** @todo [Part 1] */
+  _it = nullptr;
 }
+
+/**
+ * Parameter iterator constructor.
+ */
+ImageTraversal::Iterator::Iterator(ImageTraversal * it, PNG & png, Point & start, double tolerance) {
+  _it = it;
+  _png = png;
+  _start = start;
+  _cur = start;
+  _tolerance = tolerance;
+  _visited.resize(_png.width());
+  for (unsigned i = 0; i < _visited.size(); i++) {
+    _visited[i].resize(_png.height());
+    for (unsigned j = 0; j < _visited[i].size(); j++) {
+      _visited[i][j] = false;
+    }
+  }
+}
+
 
 /**
  * Iterator increment opreator.
@@ -42,7 +62,66 @@ ImageTraversal::Iterator::Iterator() {
  */
 ImageTraversal::Iterator & ImageTraversal::Iterator::operator++() {
   /** @todo [Part 1] */
+  _visited[_cur.x][_cur.y] = true;
+  std::cout << Point(_cur.x, _cur.y) << std::endl;
+  std::cout << "png-" << Point( _png.width(),_png.height()) << std::endl;
+  // find to the next avalible point in interator
+  while (!_it->empty() && _visited[_it->peek().x][_it->peek().y] == true) {
+    _it->pop();
+  }
+
+  // add its right, down, left, up point in order
+  Point right = Point(_cur.x + 1, _cur.y);
+  if ((right.x < _png.width() && right.y < _png.height())) {
+    std::cout << "right" << Point(right.x, right.y) << std::endl;
+    if (_visited[right.x][right.y] == false) {
+      add_if_tolerate(right);
+    }
+  }
+
+  Point down = Point(_cur.x, _cur.y + 1);
+  if ((down.x < _png.width() && down.y < _png.height())) {
+    std::cout << "down" << Point(down.x, down.y) << std::endl;
+    if (_visited[down.x][down.y] == false) {
+      add_if_tolerate(down);
+    }
+  }
+  
+
+  Point left = Point(_cur.x - 1, _cur.y);
+  if ((left.x < _png.width() && left.y < _png.height())) {
+    std::cout << "left" << Point(left.x, left.y) << std::endl;
+    if (_visited[left.x][left.y] == false) {
+      add_if_tolerate(left);
+    }
+  } 
+
+  Point up = Point(_cur.x, _cur.y - 1);
+  if ((up.x < _png.width() && up.y < _png.height())) {
+    std::cout << "up" << Point(up.x, up.y) << std::endl;
+    if (_visited[up.x][up.y] == false) {
+      add_if_tolerate(up);
+    }
+  } 
+
+  // update the _cur, check if end
+  if (!_it->empty()) {
+    _cur = _it->peek();
+  } else {
+    _it = nullptr;
+  }
+ 
   return *this;
+}
+
+void ImageTraversal::Iterator::add_if_tolerate(Point p) {
+
+  HSLAPixel p1 = _png.getPixel(_start.x, _start.y);
+  HSLAPixel p2 = _png.getPixel(p.x, p.y);
+  double delta = calculateDelta(p1, p2);
+  if (delta <= _tolerance) {
+    _it->add(p);
+  }
 }
 
 /**
@@ -52,7 +131,7 @@ ImageTraversal::Iterator & ImageTraversal::Iterator::operator++() {
  */
 Point ImageTraversal::Iterator::operator*() {
   /** @todo [Part 1] */
-  return Point(0, 0);
+  return _cur;
 }
 
 /**
@@ -62,6 +141,6 @@ Point ImageTraversal::Iterator::operator*() {
  */
 bool ImageTraversal::Iterator::operator!=(const ImageTraversal::Iterator &other) {
   /** @todo [Part 1] */
-  return false;
+  return this->_it != nullptr || other._it != nullptr;
 }
 
